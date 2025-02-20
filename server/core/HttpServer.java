@@ -9,7 +9,13 @@ import java.util.HashMap;
 
 public class HttpServer {
     private ServerSocket serverSocket;
-    private HashMap<String, HttpMethod> routes = new HashMap<>();
+
+    /*
+    "<routes>": {
+        "<route>": { "GET": <action>, "POST": <other_action> }
+    }
+    */
+    private HashMap<String, HashMap<String, HttpMethod>> routes = new HashMap<>();
 
     private void handleConnection(Socket clientSocket) {
         try {
@@ -17,14 +23,23 @@ public class HttpServer {
             HttpRequest req = new HttpRequest(in.readLine());
             HttpResponse res = new HttpResponse(clientSocket);
 
-            if (routes.containsKey(req.route)) routes.get(req.route).action(req, res);
+            if (routes.containsKey(req.route)) 
+                routes.get(req.route).get(req.method).action(req, res);
+
         } catch (Exception e) {
             e.printStackTrace();
         } 
     }
 
     public void get(String route, HttpMethod httpMethod) {
-        routes.put(route, httpMethod);
+        if (!routes.containsKey(route)) {
+            HashMap<String, HttpMethod> method = new HashMap<>();
+            method.put("GET", httpMethod);
+            routes.put(route, method);
+            return;
+        }
+
+        routes.get(route).put("GET", httpMethod);
     }
 
     public void listen(int port) throws IOException {
